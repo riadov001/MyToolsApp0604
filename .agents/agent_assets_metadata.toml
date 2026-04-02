@@ -36,3 +36,9 @@ id = "9hAClOW-WBDmEYe6xfMLq"
 uri = "file://TESTING_v2.0.1_vs_v1.0.0.md"
 type = "text"
 title = "Plan de Test — v2.0.1 vs v1.0.0 (208 fichiers modifiés)"
+
+[[outputs]]
+id = "3qtji6lVBJEUyCzcndl2Q"
+uri = "file://APPLE_REVIEW_SIMPLE_GUIDE.md"
+type = "text"
+title = "Guide Test Apple Review — Simple & Rapide"

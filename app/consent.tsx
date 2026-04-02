@@ -89,16 +89,26 @@ export default function ConsentScreen() {
 
         <Text style={styles.title}>Bienvenue sur MyTools</Text>
         <Text style={styles.subtitle}>
-          Avant d'utiliser l'application, veuillez lire et accepter nos conditions.
+          Application réservée aux administrateurs des garages partenaires MyTools.
         </Text>
+
+        <View style={[styles.card, { borderColor: theme.primary + "40", backgroundColor: theme.primary + "08" }]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="business" size={22} color={theme.primary} />
+            <Text style={styles.cardTitle}>Accès professionnel uniquement</Text>
+          </View>
+          <Text style={styles.cardText}>
+            MyTools est une application B2B strictement réservée aux administrateurs et employés des garages partenaires du réseau MyTools (France). L'accès est conditionné à la validation de votre établissement via son numéro SIRET ou sa raison sociale.
+          </Text>
+        </View>
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="shield-checkmark" size={22} color={theme.primary} />
-            <Text style={styles.cardTitle}>Protection de vos données</Text>
+            <Text style={styles.cardTitle}>Protection de vos données (RGPD)</Text>
           </View>
           <Text style={styles.cardText}>
-            Conformément au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés, vous disposez d'un droit d'accès, de rectification, de portabilité et d'effacement de vos données personnelles.
+            Conformément au RGPD et à la loi Informatique et Libertés, vous disposez d'un droit d'accès, de rectification, de portabilité et d'effacement de vos données personnelles. Vous pouvez exercer ces droits depuis l'onglet Profil.
           </Text>
         </View>
 
@@ -108,7 +118,7 @@ export default function ConsentScreen() {
             <Text style={styles.cardTitle}>Données collectées</Text>
           </View>
           <Text style={styles.cardText}>
-            Nous collectons uniquement les données nécessaires au fonctionnement du service : nom, email, téléphone, informations de véhicule et photos pour les devis. Vos données ne sont jamais vendues à des tiers.
+            {"• Identité professionnelle : nom, email, téléphone\n• Données entreprise : SIRET, raison sociale, adresse, numéro TVA\n• Authentification : via email/mot de passe ou Google/Apple (Firebase)\n• Documents métier : devis, factures, photos de véhicules\n\nVos données ne sont jamais vendues à des tiers et sont traitées exclusivement dans le cadre du service MyTools."}
           </Text>
         </View>
 
@@ -132,8 +142,8 @@ export default function ConsentScreen() {
             <CheckRow
               checked={acceptedData}
               onToggle={() => setAcceptedData(v => !v)}
-              label="Traitement des données"
-              sub="J'accepte que mes données soient traitées pour la gestion de mes devis, factures et rendez-vous"
+              label="Traitement des données professionnelles"
+              sub="J'accepte que mes données personnelles et les données de mon établissement (SIRET, raison sociale) soient traitées pour la gestion des devis, factures, réservations et l'authentification Firebase (Google/Apple)"
             />
             <View style={styles.divider} />
             <CheckRow
