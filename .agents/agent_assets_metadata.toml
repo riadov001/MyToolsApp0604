@@ -30,3 +30,9 @@ id = "92LyEitq1tq4NyXG4TYi-"
 uri = "file://APPLE_REVIEW_GUIDE.md"
 type = "text"
 title = "Guide Complet Apple App Store Review — MyToolsApp v2.0.1"
+
+[[outputs]]
+id = "9hAClOW-WBDmEYe6xfMLq"
+uri = "file://TESTING_v2.0.1_vs_v1.0.0.md"
+type = "text"
+title = "Plan de Test — v2.0.1 vs v1.0.0 (208 fichiers modifiés)"
