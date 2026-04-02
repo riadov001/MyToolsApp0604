@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import * as admin from "firebase-admin";
 
 const EXTERNAL_APIS = [
   process.env.EXTERNAL_API_PRIMARY || "https://saas2.mytoolsgroup.eu/api",
@@ -36,7 +37,6 @@ function getAdminAuth() {
   }
 
   try {
-    const admin = require("firebase-admin");
     const serviceAccount = JSON.parse(serviceAccountJson);
 
     if (serviceAccount.private_key) {
@@ -47,8 +47,6 @@ function getAdminAuth() {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
-    } else {
-      admin.app();
     }
 
     adminApp = admin.auth();
