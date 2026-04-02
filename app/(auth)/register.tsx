@@ -46,6 +46,16 @@ export default function GarageRegisterScreen() {
   const [nameInput, setNameInput] = useState("");
   const [company, setCompany] = useState<CompanyInfo | null>(null);
   const siretLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nameLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [suggestions, setSuggestions] = useState<CompanyInfo[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualSiret, setManualSiret] = useState("");
+  const [manualName, setManualName] = useState("");
+  const [manualAddress, setManualAddress] = useState("");
+  const [manualPostalCode, setManualPostalCode] = useState("");
+  const [manualCity, setManualCity] = useState("");
 
   const nameParts = prefillName.split(" ");
   const [firstName, setFirstName] = useState(nameParts[0] || "");
@@ -62,10 +72,22 @@ export default function GarageRegisterScreen() {
   const topPad = Platform.OS === "web" ? 67 + 16 : insets.top + 16;
   const bottomPad = Platform.OS === "web" ? 34 + 24 : insets.bottom + 24;
 
-  const doLookup = useCallback(async (query: string, isSiret: boolean) => {
+  const parseCompanyData = useCallback((data: any, fallbackQuery?: string): CompanyInfo => ({
+    name: data.name || data.companyName || data.denominationUniteLegale || "",
+    address: data.address || data.adresseEtablissement || "",
+    city: data.city || data.libelleCommuneEtablissement || "",
+    postalCode: data.postalCode || data.codePostalEtablissement || "",
+    siret: data.siret || fallbackQuery || "",
+    siren: data.siren || (data.siret ? data.siret.slice(0, 9) : ""),
+    legalForm: data.legalForm || data.categorieJuridiqueUniteLegale || "",
+    tvaNumber: data.tvaNumber || "",
+  }), []);
+
+  const doLookup = useCallback(async (query: string, mode: "siret" | "siren") => {
     setLoading(true);
+    setSuggestions([]);
     try {
-      const param = isSiret ? `siret=${encodeURIComponent(query)}` : `name=${encodeURIComponent(query)}`;
+      const param = mode === "siren" ? `siren=${encodeURIComponent(query)}` : `siret=${encodeURIComponent(query)}`;
       const res = await fetch(`${apiBase}/api/mobile/public/siret-lookup?${param}`, {
         headers: { Accept: "application/json" },
       });
@@ -74,43 +96,119 @@ export default function GarageRegisterScreen() {
         throw new Error(err?.message || "Entreprise introuvable");
       }
       const data = await res.json();
-      setCompany({
-        name: data.name || data.companyName || "",
-        address: data.address || "",
-        city: data.city || "",
-        postalCode: data.postalCode || "",
-        siret: data.siret || query,
-        siren: data.siren || "",
-        legalForm: data.legalForm || "",
-        tvaNumber: data.tvaNumber || "",
-      });
-      if (!garageName && (data.name || data.companyName)) setGarageName(data.name || data.companyName);
+      const items: any[] = Array.isArray(data) ? data : (data.results || data.companies || data.etablissements || [data]);
+      if (items.length > 1) {
+        setSuggestions(items.map((d) => parseCompanyData(d)));
+      } else {
+        const co = parseCompanyData(items[0] ?? data, query);
+        setCompany(co);
+        if (!garageName && co.name) setGarageName(co.name);
+      }
     } catch (err: any) {
-      showAlert({ type: "error", title: "Recherche échouée", message: err.message || "Impossible de trouver l'entreprise.", buttons: [{ text: "OK", style: "primary" }] });
+      showAlert({ type: "error", title: "Introuvable", message: err.message || "Impossible de trouver l'établissement.", buttons: [{ text: "OK", style: "primary" }] });
       setCompany(null);
     } finally {
       setLoading(false);
     }
-  }, [garageName, apiBase]);
+  }, [garageName, apiBase, parseCompanyData]);
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.length < 3) { setSuggestions([]); return; }
+    setLoadingSuggestions(true);
+    try {
+      const res = await fetch(`${apiBase}/api/mobile/public/siret-lookup?name=${encodeURIComponent(query)}`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) { setSuggestions([]); return; }
+      const data = await res.json();
+      const items: any[] = Array.isArray(data)
+        ? data
+        : (data.results || data.companies || data.etablissements || (data.name || data.companyName ? [data] : []));
+      setSuggestions(items.map((d) => parseCompanyData(d)).filter((c) => c.name));
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [apiBase, parseCompanyData]);
 
   const handleSiretChange = useCallback((text: string) => {
     const digits = text.replace(/\D/g, "").slice(0, 14);
     setSiretInput(digits);
     setCompany(null);
+    setSuggestions([]);
+    setNameInput("");
     if (siretLookupTimer.current) clearTimeout(siretLookupTimer.current);
     if (digits.length === 14) {
-      siretLookupTimer.current = setTimeout(() => doLookup(digits, true), 300);
+      siretLookupTimer.current = setTimeout(() => doLookup(digits, "siret"), 400);
+    } else if (digits.length === 9) {
+      siretLookupTimer.current = setTimeout(() => doLookup(digits, "siren"), 400);
     }
   }, [doLookup]);
+
+  const handleNameChange = useCallback((text: string) => {
+    setNameInput(text);
+    setSiretInput("");
+    setCompany(null);
+    if (nameLookupTimer.current) clearTimeout(nameLookupTimer.current);
+    if (text.length >= 3) {
+      nameLookupTimer.current = setTimeout(() => fetchSuggestions(text), 500);
+    } else {
+      setSuggestions([]);
+    }
+  }, [fetchSuggestions]);
+
+  const selectSuggestion = useCallback((item: CompanyInfo) => {
+    setCompany(item);
+    setSuggestions([]);
+    setNameInput(item.name);
+    if (!garageName) setGarageName(item.name);
+  }, [garageName]);
 
   const lookupManual = useCallback(async () => {
     const query = siretInput.trim() || nameInput.trim();
     if (!query) {
-      showAlert({ type: "error", title: "Erreur", message: "Veuillez saisir un SIRET ou un nom d'entreprise.", buttons: [{ text: "OK", style: "primary" }] });
+      showAlert({ type: "error", title: "Erreur", message: "Veuillez saisir un SIRET, SIREN ou un nom d'entreprise.", buttons: [{ text: "OK", style: "primary" }] });
       return;
     }
-    await doLookup(query, !!siretInput.trim());
-  }, [siretInput, nameInput, doLookup]);
+    if (siretInput.trim()) {
+      const digits = siretInput.trim();
+      if (digits.length === 9) await doLookup(digits, "siren");
+      else if (digits.length === 14) await doLookup(digits, "siret");
+      else showAlert({ type: "error", title: "Format invalide", message: "Saisissez un SIRET (14 chiffres) ou un SIREN (9 chiffres).", buttons: [{ text: "OK", style: "primary" }] });
+    } else {
+      await fetchSuggestions(nameInput.trim());
+    }
+  }, [siretInput, nameInput, doLookup, fetchSuggestions]);
+
+  const confirmManualEntry = useCallback(() => {
+    const siretClean = manualSiret.replace(/\D/g, "");
+    if (siretClean.length !== 14) {
+      showAlert({ type: "error", title: "SIRET invalide", message: "Le numéro SIRET doit contenir exactement 14 chiffres.", buttons: [{ text: "OK", style: "primary" }] });
+      return;
+    }
+    if (!manualName.trim()) {
+      showAlert({ type: "error", title: "Champ requis", message: "La raison sociale est obligatoire.", buttons: [{ text: "OK", style: "primary" }] });
+      return;
+    }
+    if (!manualAddress.trim()) {
+      showAlert({ type: "error", title: "Champ requis", message: "L'adresse est obligatoire.", buttons: [{ text: "OK", style: "primary" }] });
+      return;
+    }
+    const co: CompanyInfo = {
+      name: manualName.trim(),
+      address: manualAddress.trim(),
+      city: manualCity.trim(),
+      postalCode: manualPostalCode.trim(),
+      siret: siretClean,
+      siren: siretClean.slice(0, 9),
+      legalForm: "",
+      tvaNumber: "",
+    };
+    setCompany(co);
+    if (!garageName) setGarageName(co.name);
+    setManualMode(false);
+  }, [manualSiret, manualName, manualAddress, manualCity, manualPostalCode, garageName]);
 
   const checkEmailAndProceed = useCallback(async () => {
     if (!company) return;
@@ -224,6 +322,46 @@ export default function GarageRegisterScreen() {
     }
   }, [firstName, lastName, email, password, confirmPassword, garageName, smsConsent, legalConsent, company, firebaseUid, isGoogleFlow, idToken, socialLogin, apiBase]);
 
+  const renderCompanyCard = (co: CompanyInfo, onConfirm: () => void) => (
+    <View style={styles.companyCard}>
+      <Text style={styles.companyName}>{co.name}</Text>
+      {!!co.address && (
+        <View style={styles.companyRow}>
+          <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
+          <Text style={styles.companyDetail}>{co.address}{co.postalCode || co.city ? `, ${co.postalCode} ${co.city}` : ""}</Text>
+        </View>
+      )}
+      {!!co.siret && (
+        <View style={styles.companyRow}>
+          <Ionicons name="document-text-outline" size={14} color={theme.textSecondary} />
+          <Text style={styles.companyDetail}>SIRET : {co.siret}</Text>
+        </View>
+      )}
+      {!co.siret && !!co.siren && (
+        <View style={styles.companyRow}>
+          <Ionicons name="document-text-outline" size={14} color={theme.textSecondary} />
+          <Text style={styles.companyDetail}>SIREN : {co.siren}</Text>
+        </View>
+      )}
+      {!!co.tvaNumber && (
+        <View style={styles.companyRow}>
+          <Ionicons name="receipt-outline" size={14} color={theme.textSecondary} />
+          <Text style={styles.companyDetail}>TVA : {co.tvaNumber}</Text>
+        </View>
+      )}
+      {!!co.legalForm && (
+        <View style={styles.companyRow}>
+          <Ionicons name="briefcase-outline" size={14} color={theme.textSecondary} />
+          <Text style={styles.companyDetail}>{co.legalForm}</Text>
+        </View>
+      )}
+      <Pressable style={styles.confirmBtn} onPress={onConfirm}>
+        <Ionicons name="checkmark-circle" size={18} color="#fff" />
+        <Text style={styles.confirmBtnText}>C'est mon entreprise</Text>
+      </Pressable>
+    </View>
+  );
+
   const renderSiretStep = () => (
     <>
       <View style={styles.stepHeader}>
@@ -232,7 +370,7 @@ export default function GarageRegisterScreen() {
         </View>
         <Text style={styles.stepTitle}>Recherche d'entreprise</Text>
         <Text style={styles.stepDesc}>
-          Recherchez votre garage par numéro SIRET ou par nom d'entreprise.
+          Recherchez votre garage par SIRET, SIREN ou raison sociale.{"\n"}France uniquement.
         </Text>
       </View>
 
@@ -245,82 +383,190 @@ export default function GarageRegisterScreen() {
         </View>
       )}
 
-      <Text style={styles.label}>Numéro SIRET</Text>
-      <TextInput
-        style={styles.input}
-        value={siretInput}
-        onChangeText={handleSiretChange}
-        placeholder="Ex: 12345678901234"
-        placeholderTextColor={theme.textTertiary}
-        keyboardType="number-pad"
-        maxLength={14}
-        autoCapitalize="none"
-      />
-      {siretInput.length > 0 && siretInput.length < 14 && (
-        <Text style={styles.siretHint}>{siretInput.length}/14 chiffres</Text>
-      )}
+      {!manualMode ? (
+        <>
+          <Text style={styles.label}>Numéro SIRET / SIREN</Text>
+          <TextInput
+            style={styles.input}
+            value={siretInput}
+            onChangeText={handleSiretChange}
+            placeholder="14 chiffres (SIRET) ou 9 chiffres (SIREN)"
+            placeholderTextColor={theme.textTertiary}
+            keyboardType="number-pad"
+            maxLength={14}
+            autoCapitalize="none"
+          />
+          {siretInput.length > 0 && siretInput.length !== 9 && siretInput.length !== 14 && (
+            <Text style={styles.siretHint}>
+              {siretInput.length}/14 — {siretInput.length < 9 ? `encore ${9 - siretInput.length} chiffres pour SIREN` : `encore ${14 - siretInput.length} chiffres pour SIRET`}
+            </Text>
+          )}
+          {siretInput.length === 9 && !loading && !company && (
+            <Text style={[styles.siretHint, { color: "#F59E0B" }]}>SIREN détecté — recherche en cours…</Text>
+          )}
 
-      <View style={styles.orRow}>
-        <View style={styles.orLine} />
-        <Text style={styles.orText}>ou</Text>
-        <View style={styles.orLine} />
-      </View>
-
-      <Text style={styles.label}>Nom de l'entreprise</Text>
-      <TextInput
-        style={styles.input}
-        value={nameInput}
-        onChangeText={(t) => { setNameInput(t); setCompany(null); }}
-        placeholder="Ex: Mon Garage Auto"
-        placeholderTextColor={theme.textTertiary}
-        autoCapitalize="words"
-      />
-
-      <Pressable
-        style={[styles.primaryBtn, loading && { opacity: 0.6 }]}
-        onPress={lookupManual}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <>
-            <Ionicons name="search" size={18} color="#fff" />
-            <Text style={styles.primaryBtnText}>Rechercher</Text>
-          </>
-        )}
-      </Pressable>
-
-      {company && (
-        <View style={styles.companyCard}>
-          <Text style={styles.companyName}>{company.name}</Text>
-          <View style={styles.companyRow}>
-            <Ionicons name="location-outline" size={14} color={theme.textSecondary} />
-            <Text style={styles.companyDetail}>{company.address}, {company.postalCode} {company.city}</Text>
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>ou</Text>
+            <View style={styles.orLine} />
           </View>
-          {company.siret ? (
-            <View style={styles.companyRow}>
-              <Ionicons name="document-text-outline" size={14} color={theme.textSecondary} />
-              <Text style={styles.companyDetail}>SIRET: {company.siret}</Text>
+
+          <Text style={styles.label}>Raison sociale</Text>
+          <View style={{ position: "relative" }}>
+            <View style={styles.nameInputRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={nameInput}
+                onChangeText={handleNameChange}
+                placeholder="Ex: Garage du Centre"
+                placeholderTextColor={theme.textTertiary}
+                autoCapitalize="words"
+              />
+              {loadingSuggestions && (
+                <ActivityIndicator size="small" color={theme.primary} style={{ position: "absolute", right: 14, top: 14 }} />
+              )}
             </View>
-          ) : null}
-          {company.tvaNumber ? (
-            <View style={styles.companyRow}>
-              <Ionicons name="receipt-outline" size={14} color={theme.textSecondary} />
-              <Text style={styles.companyDetail}>TVA: {company.tvaNumber}</Text>
-            </View>
-          ) : null}
-          {company.legalForm ? (
-            <View style={styles.companyRow}>
-              <Ionicons name="briefcase-outline" size={14} color={theme.textSecondary} />
-              <Text style={styles.companyDetail}>{company.legalForm}</Text>
-            </View>
-          ) : null}
-          <Pressable style={styles.confirmBtn} onPress={checkEmailAndProceed}>
-            <Ionicons name="checkmark-circle" size={18} color="#fff" />
-            <Text style={styles.confirmBtnText}>C'est mon entreprise</Text>
+
+            {suggestions.length > 0 && !company && (
+              <View style={styles.suggestionList}>
+                {suggestions.map((item, idx) => (
+                  <Pressable
+                    key={`${item.siret || item.siren}-${idx}`}
+                    style={({ pressed }) => [
+                      styles.suggestionItem,
+                      idx < suggestions.length - 1 && styles.suggestionDivider,
+                      pressed && { backgroundColor: theme.primary + "12" },
+                    ]}
+                    onPress={() => selectSuggestion(item)}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.suggestionName} numberOfLines={1}>{item.name}</Text>
+                      {!!item.city && (
+                        <Text style={styles.suggestionSub} numberOfLines={1}>
+                          {item.postalCode} {item.city}{item.siret ? ` · ${item.siret}` : ""}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={theme.textTertiary} />
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            {nameInput.length >= 3 && !loadingSuggestions && suggestions.length === 0 && !company && (
+              <Text style={[styles.siretHint, { marginTop: 4 }]}>Aucun résultat — essayez un autre terme ou saisissez manuellement.</Text>
+            )}
+          </View>
+
+          <Pressable
+            style={[styles.primaryBtn, (loading || loadingSuggestions) && { opacity: 0.6 }]}
+            onPress={lookupManual}
+            disabled={loading || loadingSuggestions}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="search" size={18} color="#fff" />
+                <Text style={styles.primaryBtnText}>Rechercher</Text>
+              </>
+            )}
           </Pressable>
-        </View>
+
+          {company && renderCompanyCard(company, checkEmailAndProceed)}
+
+          <View style={styles.orRow}>
+            <View style={styles.orLine} />
+            <Text style={styles.orText}>vous ne trouvez pas ?</Text>
+            <View style={styles.orLine} />
+          </View>
+
+          <Pressable style={styles.manualBtn} onPress={() => { setManualMode(true); setCompany(null); setSuggestions([]); }}>
+            <Ionicons name="create-outline" size={16} color={theme.primary} />
+            <Text style={styles.manualBtnText}>Saisir manuellement</Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <View style={[styles.companyBadge, { backgroundColor: "#F59E0B15", marginBottom: 16 }]}>
+            <Ionicons name="create-outline" size={16} color="#F59E0B" />
+            <Text style={[styles.companyBadgeText, { color: "#F59E0B" }]}>Saisie manuelle — tous les champs marqués * sont requis</Text>
+          </View>
+
+          <Text style={styles.label}>SIRET * <Text style={styles.labelHint}>(14 chiffres)</Text></Text>
+          <TextInput
+            style={[styles.input, manualSiret.replace(/\D/g, "").length > 0 && manualSiret.replace(/\D/g, "").length !== 14 && { borderColor: "#EF4444" }]}
+            value={manualSiret}
+            onChangeText={(t) => setManualSiret(t.replace(/\D/g, "").slice(0, 14))}
+            placeholder="12345678901234"
+            placeholderTextColor={theme.textTertiary}
+            keyboardType="number-pad"
+            maxLength={14}
+          />
+          {manualSiret.length > 0 && manualSiret.length !== 14 && (
+            <Text style={[styles.siretHint, { color: "#EF4444" }]}>{manualSiret.length}/14 chiffres — SIRET incomplet</Text>
+          )}
+
+          <Text style={styles.label}>Raison sociale *</Text>
+          <TextInput
+            style={styles.input}
+            value={manualName}
+            onChangeText={setManualName}
+            placeholder="Ex: Garage du Centre SARL"
+            placeholderTextColor={theme.textTertiary}
+            autoCapitalize="words"
+          />
+
+          <Text style={styles.label}>Adresse *</Text>
+          <TextInput
+            style={styles.input}
+            value={manualAddress}
+            onChangeText={setManualAddress}
+            placeholder="Ex: 12 rue de la Paix"
+            placeholderTextColor={theme.textTertiary}
+            autoCapitalize="words"
+          />
+
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Code postal</Text>
+              <TextInput
+                style={styles.input}
+                value={manualPostalCode}
+                onChangeText={(t) => setManualPostalCode(t.replace(/\D/g, "").slice(0, 5))}
+                placeholder="75001"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="number-pad"
+                maxLength={5}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Ville</Text>
+              <TextInput
+                style={styles.input}
+                value={manualCity}
+                onChangeText={setManualCity}
+                placeholder="Paris"
+                placeholderTextColor={theme.textTertiary}
+                autoCapitalize="words"
+              />
+            </View>
+          </View>
+
+          <Pressable
+            style={[styles.primaryBtn, { marginTop: 8 }]}
+            onPress={confirmManualEntry}
+          >
+            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Text style={styles.primaryBtnText}>Valider l'entreprise</Text>
+          </Pressable>
+
+          <Pressable style={styles.backStepBtn} onPress={() => setManualMode(false)}>
+            <Ionicons name="arrow-back" size={16} color={theme.textSecondary} />
+            <Text style={styles.backStepText}>Retour à la recherche</Text>
+          </Pressable>
+
+          {company && renderCompanyCard(company, checkEmailAndProceed)}
+        </>
       )}
     </>
   );
@@ -670,4 +916,26 @@ const getStyles = (theme: ThemeColors) => StyleSheet.create({
     fontSize: 14, fontFamily: "Inter_400Regular", color: theme.textSecondary,
     textAlign: "center", lineHeight: 22, paddingHorizontal: 10,
   },
+  nameInputRow: { flexDirection: "row", alignItems: "center" },
+  suggestionList: {
+    backgroundColor: theme.surface, borderRadius: 12,
+    borderWidth: 1, borderColor: theme.primary + "40",
+    marginTop: 4, overflow: "hidden",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 6, elevation: 3,
+  },
+  suggestionItem: {
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 14, paddingVertical: 12, gap: 10,
+  },
+  suggestionDivider: { borderBottomWidth: 1, borderBottomColor: theme.border },
+  suggestionName: { fontSize: 14, fontFamily: "Inter_600SemiBold", color: theme.text },
+  suggestionSub: { fontSize: 12, fontFamily: "Inter_400Regular", color: theme.textSecondary, marginTop: 2 },
+  manualBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    borderWidth: 1.5, borderColor: theme.primary, borderRadius: 14,
+    height: 48, marginBottom: 8,
+  },
+  manualBtnText: { fontSize: 15, fontFamily: "Inter_600SemiBold", color: theme.primary },
+  labelHint: { fontSize: 11, fontFamily: "Inter_400Regular", color: theme.textTertiary, fontWeight: "normal" },
 });
