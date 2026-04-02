@@ -37,7 +37,7 @@ function detectIsEmployee(user: any): boolean {
 interface SocialLoginSuccess {
   status: "authenticated";
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   user: UserProfile;
 }
 
