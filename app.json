@@ -25,6 +25,7 @@
         "NSPhotoLibraryUsageDescription": "MyTools Admin accède à la galerie pour joindre des photos aux devis et demandes de service.",
         "NSPhotoLibraryAddUsageDescription": "MyTools Admin peut enregistrer des photos dans votre bibliothèque.",
         "NSCalendarsUsageDescription": "MyTools synchronise vos rendez-vous avec votre calendrier natif.",
+        "NSFaceIDUsageDescription": "MyTools utilise Face ID pour vous permettre de vous connecter de manière sécurisée et rapide à votre compte.",
         "ITSAppUsesNonExemptEncryption": "NO",
         "NSUserNotificationsUsageDescription": "MyTools vous envoie des notifications pour les mises à jour de devis, nouvelles factures et rappels de rendez-vous.",
         "CFBundleURLTypes": [
@@ -47,8 +48,7 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.READ_MEDIA_IMAGES"
       ]
     },
     "web": {

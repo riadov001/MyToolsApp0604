@@ -1,370 +1,344 @@
-# MyTools - Guide de soumission Apple App Store
-
-## Informations generales de l'application
-
-| Champ | Valeur |
-|-------|--------|
-| Nom de l'app | MyTools |
-| Bundle ID | `com.mytools.app` |
-| Version | 1.0.0 |
-| Plateforme | iOS (iPhone + iPad) |
-| Categorie principale | Economie et entreprise (Business) |
-| Categorie secondaire | Utilitaires (Utilities) |
-| Classification d'age | 4+ (Pas de contenu sensible) |
-| Langues | Francais |
-| Editeur / Owner | lastmytools |
-| EAS Project ID | `45e48f45-e421-4f67-9d02-d84a678fdfc5` |
+# MyTools — Guide Complet Apple App Store Review
+*Version 2.0.1 — Mis à jour le 02/04/2026*
 
 ---
 
-## Description de l'application
+## 1. Informations Générales de l'Application
 
-### Description courte (max 30 caracteres)
+| Champ | Valeur |
+|-------|--------|
+| Nom de l'app | MyToolsApp |
+| Bundle Identifier | `app.mytoolsmobile.mytoolsgroup.eu` |
+| Version | 2.0.1 |
+| Build Number | 15 |
+| EAS Project ID | `2429ee3a-9dd5-4767-9532-175f1db29ff3` |
+| Owner Expo | `mytoolsgroup` |
+| Plateforme | iOS (iPhone + iPad) |
+| Catégorie principale | Business (Économie et entreprise) |
+| Catégorie secondaire | Utilities (Utilitaires) |
+| Classification d'âge | 4+ |
+| Langue principale | Français |
+| Orientation | Portrait uniquement |
+
+---
+
+## 2. Compte de Démonstration (OBLIGATOIRE pour Apple)
+
+> Apple **rejette systématiquement** les apps sans compte de démonstration fonctionnel.
+> Ces identifiants doivent être saisis dans **App Store Connect > App Review Information > Sign-In Information**.
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `review@testapp.com` |
+| Mot de passe | `Test123456` |
+| Rôle | Admin (accès complet à toutes les fonctionnalités) |
+
+### Notes pour le reviewer (à copier dans App Store Connect > Notes)
+
+```
+MyToolsApp est un portail professionnel pour les garages du réseau MyJantes,
+spécialisé dans la rénovation et personnalisation de jantes automobiles.
+
+L'application propose deux espaces :
+- Espace Admin/Employé : gestion complète (devis, factures, réservations, clients)
+- Espace Client : consultation et suivi des dossiers
+
+Le compte de démonstration fourni (review@testapp.com / Test123456) est un compte admin
+avec données de test préconfigurées.
+
+PERMISSIONS UTILISÉES :
+- Appareil photo : photographier les véhicules/jantes pour les devis
+- Galerie photos : sélectionner des photos existantes pour les devis
+- Face ID : connexion biométrique optionnelle (l'utilisateur l'active dans son profil)
+- Calendrier : ajouter un rendez-vous au calendrier natif iOS
+- Notifications : alertes pour devis, factures et rendez-vous
+- Connexion réseau : communication avec l'API backend (saas2.mytoolsgroup.eu)
+
+L'application n'effectue aucun suivi publicitaire. Aucun SDK de tracking n'est intégré.
+Données personnelles traitées uniquement dans le cadre du service garage.
+```
+
+---
+
+## 3. Parcours du Reviewer (Flux Complet)
+
+### Premier lancement
+1. **Écran de consentement RGPD** → 3 cases obligatoires à cocher (confidentialité, cookies, traitement des données) → bouton "Accepter et continuer" s'active
+2. **Écran de connexion** → saisir `review@testapp.com` / `Test123456` → "Se connecter"
+3. **Tableau de bord Admin** s'affiche avec statistiques et modules
+
+### Navigation principale (onglets)
+| Onglet | Contenu |
+|--------|---------|
+| Accueil | Dashboard : revenus, clients, devis, factures, réservations |
+| Devis | Liste avec statuts, création, modification, suppression |
+| Factures | Historique, visualisation PDF, création |
+| Réservations | Calendrier et liste, confirmation, annulation |
+| Clients | Fiches clients, historique |
+| Profil | Paramètres, notifications, sécurité, suppression de compte |
+
+### Fonctionnalités clés à tester
+- **Créer un devis** : Devis > + > remplir le formulaire > joindre photo (caméra ou galerie)
+- **Télécharger une facture PDF** : Factures > sélectionner une facture > Télécharger
+- **Ajouter un RDV au calendrier** : Réservations > détail > "Ajouter au calendrier"
+- **Activer Face ID** : Profil > Sécurité > Connexion biométrique (toggle)
+- **Suppression de compte** : Profil > Zone critique > Supprimer mon compte → confirmation en 2 étapes (NE PAS CONFIRMER)
+
+---
+
+## 4. Permissions iOS — Configuration Complète
+
+Toutes les permissions sont déclarées dans `app.json > expo > ios > infoPlist` :
+
+| Permission | Clé infoPlist | Justification |
+|------------|---------------|---------------|
+| Appareil photo | `NSCameraUsageDescription` | Photographier les véhicules et pièces lors des devis |
+| Bibliothèque photos (lecture) | `NSPhotoLibraryUsageDescription` | Sélectionner des photos de véhicules pour les devis |
+| Bibliothèque photos (écriture) | `NSPhotoLibraryAddUsageDescription` | Enregistrer des photos dans la bibliothèque |
+| Calendrier | `NSCalendarsUsageDescription` | Synchroniser les rendez-vous avec le calendrier natif |
+| Face ID | `NSFaceIDUsageDescription` | Connexion biométrique sécurisée et rapide ✅ |
+| Notifications | `NSUserNotificationsUsageDescription` | Alertes pour devis, factures et rendez-vous |
+| Chiffrement | `ITSAppUsesNonExemptEncryption: NO` | HTTPS standard uniquement (TLS/SSL exempt) |
+
+**Permissions NOT utilisées (non déclarées) :**
+- ❌ Microphone / NSMicrophoneUsageDescription — non utilisé
+- ❌ Localisation / NSLocationWhenInUseUsageDescription — non utilisé
+- ❌ ATT / NSUserTrackingUsageDescription — aucun tracking publicitaire
+- ❌ Contacts — non utilisé
+- ❌ Bluetooth — non utilisé
+
+---
+
+## 5. Déclarations de Confidentialité (App Privacy dans App Store Connect)
+
+### Données collectées et liées à l'identité
+
+| Type de donnée | Catégorie | Usage | Lié à l'identité | Suivi |
+|----------------|-----------|-------|-------------------|-------|
+| Nom | Coordonnées | Fonctionnalité de l'app | Oui | Non |
+| Adresse email | Coordonnées | Fonctionnalité de l'app | Oui | Non |
+| Numéro de téléphone | Coordonnées | Fonctionnalité de l'app | Oui | Non |
+| User ID | Identifiants | Fonctionnalité de l'app | Oui | Non |
+| Photos de véhicules | Contenu utilisateur | Fonctionnalité de l'app | Oui | Non |
+
+### Données NON collectées
+- Localisation géographique
+- Données financières ou bancaires
+- Données de santé
+- Historique de navigation
+- Historique de recherche
+- Données publicitaires
+- Diagnostics / crash reports envoyés à des tiers
+
+### URL de Politique de Confidentialité
+```
+https://www.mytoolsgroup.eu/privacy
+```
+
+---
+
+## 6. Conformité Apple — Exigences Critiques
+
+### ✅ Suppression de compte (obligatoire depuis juin 2022)
+- Accessible depuis : **Profil > Zone critique > Supprimer mon compte**
+- Processus en 2 étapes : liste des données supprimées + confirmation par checkbox RGPD
+- Backend : endpoint `DELETE /api/users/me` — supprime le compte dans l'API externe et enregistre localement
+
+### ✅ Connexion Sign in with Apple (obligatoire si Google Sign-In présent)
+- `expo-apple-authentication` intégré
+- Affiché uniquement sur iOS (caché sur web/Android)
+- Token Firebase vérifié côté serveur via Firebase Admin SDK
+
+### ✅ Politique de confidentialité accessible in-app
+- Accessible depuis l'écran de consentement RGPD (premier lancement)
+- Accessible depuis Profil > Mentions légales / Confidentialité
+
+### ✅ Consentement RGPD
+- Affiché obligatoirement au premier lancement
+- 3 cases distinctes (pas de case "tout accepter" unique)
+- Mémorisé via AsyncStorage
+
+### ✅ Pas de références à d'autres plateformes
+- Aucune mention d'Android, Google Play ou de prix/promotions hors App Store
+
+### ✅ Mode avion / erreur réseau
+- Timeout 15 secondes sur toutes les requêtes
+- Messages d'erreur clairs en français
+- Aucun crash en cas de perte réseau
+
+### ✅ Support des Safe Areas
+- `useSafeAreaInsets()` utilisé sur tous les écrans
+- Compatible iPhone SE, iPhone 16 Pro Max (Dynamic Island)
+
+### ✅ Mode sombre et mode clair
+- `userInterfaceStyle: "automatic"` dans app.json
+- Thème adaptatif via `useColors()` hook
+
+### ✅ ErrorBoundary global
+- `components/ErrorBoundary.tsx` wrappé autour de l'app entière
+- Bouton "Relancer l'application" en cas de crash critique
+
+---
+
+## 7. Checklist Complète Avant Soumission
+
+### App Store Connect
+- [ ] Compte Apple Developer actif (99 $/an)
+- [ ] App créée dans App Store Connect avec Bundle ID `app.mytoolsmobile.mytoolsgroup.eu`
+- [ ] **Identifiants de demo renseignés** dans App Review Information > Sign-In Information
+- [ ] **Notes reviewer** copiées dans App Review Information > Notes
+- [ ] URL politique de confidentialité : `https://www.mytoolsgroup.eu/privacy`
+- [ ] URL de support renseignée
+- [ ] Description courte (≤30 car.) : `Portail client MyJantes`
+- [ ] Sous-titre (≤30 car.) : `Devis, factures et rendez-vous`
+- [ ] Description longue (voir section 8)
+- [ ] Mots-clés (≤100 car.) : `jantes,renovation,peinture,automobile,devis,garage,voiture,factures,rdv`
+- [ ] Catégorie : Business / Utilities
+- [ ] Classification d'âge : 4+
+- [ ] Screenshots iPhone 6.7" (1290×2796 px) — minimum 3
+- [ ] Screenshots iPhone 6.1" (1179×2556 px) — minimum 3
+- [ ] Icône app 1024×1024 PNG sans transparence ni coins arrondis
+- [ ] Privacy labels remplis (section 5 ci-dessus)
+- [ ] "Does this app use encryption?" → **No** (HTTPS standard uniquement)
+- [ ] "Does this app contain, display or access third-party content?" → Non
+
+### Technique
+- [ ] `NSFaceIDUsageDescription` présent dans app.json ✅ (ajouté le 02/04/2026)
+- [ ] `ITSAppUsesNonExemptEncryption: NO` dans infoPlist ✅
+- [ ] `RECORD_AUDIO` Android permission supprimée ✅ (non utilisée)
+- [ ] Build de production créé via Replit Expo Launch (iOS)
+- [ ] API primaire `https://saas2.mytoolsgroup.eu/api` accessible ✅
+- [ ] API de secours `https://saas3.mytoolsgroup.eu/api` configurée ✅
+- [ ] Firebase `FIREBASE_SERVICE_ACCOUNT_JSON` configuré ✅
+- [ ] Compte de démo `review@testapp.com` fonctionnel sur l'API externe
+- [ ] Écran de suppression de compte opérationnel
+- [ ] Pas de crash au lancement (testé sur simulateur iPhone)
+- [ ] Consentement RGPD s'affiche au premier lancement (après suppression de l'app)
+
+---
+
+## 8. Textes App Store Connect (Copier-Coller)
+
+### Description courte (max 30 caractères)
 ```
 Portail client MyJantes
 ```
 
-### Sous-titre App Store (max 30 caracteres)
+### Sous-titre (max 30 caractères)
 ```
 Devis, factures et rendez-vous
 ```
 
-### Description longue (App Store)
+### Description longue
 ```
-MyTools est l'application mobile officielle du reseau MyJantes, specialise dans la renovation et la personnalisation de jantes automobiles.
+MyToolsApp est l'application officielle du réseau MyJantes, spécialisé dans la rénovation et personnalisation de jantes automobiles.
 
-Avec MyTools, gerez l'ensemble de vos interactions avec votre garage MyJantes directement depuis votre telephone :
+POUR LES CLIENTS
+• Demandez un devis gratuit en quelques étapes
+• Joignez des photos de vos jantes directement depuis l'app
+• Acceptez ou refusez vos devis en un tap
+• Prenez rendez-vous après acceptation de votre devis
+• Consultez et téléchargez vos factures en PDF
+• Communiquez directement avec votre garage
 
-DEVIS EN LIGNE
-- Demandez un devis gratuit en quelques clics
-- Selectionnez vos services (peinture, reparation, personnalisation)
-- Envoyez des photos de vos jantes pour un devis precis
-- Suivez le statut de vos demandes en temps reel
-- Acceptez ou refusez les devis directement depuis l'application
+POUR LES PROFESSIONNELS (Admin / Employés)
+• Tableau de bord avec indicateurs clés (revenus, devis, factures)
+• Gestion complète des devis, factures et réservations
+• Gestion du fichier clients
+• Analyse des documents par IA (OCR Gemini)
 
-GESTION DES RENDEZ-VOUS
-- Prenez rendez-vous en ligne apres acceptation de votre devis
-- Choisissez votre creneau horaire prefere
-- Suivez vos rendez-vous a venir et passes
+SÉCURITÉ ET CONFIDENTIALITÉ
+• Connexion sécurisée avec Face ID / Touch ID
+• Connexion sociale via Google ou Apple
+• Données protégées conformément au RGPD
+• Suppression de compte complète disponible dans l'app
 
-FACTURES ET DOCUMENTS
-- Consultez l'historique complet de vos factures
-- Telechargez vos factures en PDF
-- Gardez une trace de tous vos documents
-
-MESSAGERIE INTEGREE
-- Communiquez directement avec votre garage
-- Posez vos questions et recevez des reponses rapides
-
-SECURITE ET CONFIDENTIALITE
-- Connexion securisee avec Face ID / Touch ID
-- Protection de vos donnees conformement au RGPD
-- Notifications push pour ne rien manquer
-
-L'application est disponible pour les particuliers et les professionnels.
+NOTIFICATIONS
+• Alertes en temps réel pour chaque mise à jour de devis, facture ou rendez-vous
+• Gestion des préférences de notification dans le profil
 ```
 
-### Mots-cles (max 100 caracteres, separes par des virgules)
+### Mots-clés (max 100 caractères)
 ```
-jantes,renovation,peinture,reparation,automobile,devis,garage,voiture,roues,carrosserie
+jantes,renovation,automobile,devis,garage,factures,rdv,voiture,peinture,carrosserie
 ```
 
 ---
 
-## Compte de demonstration pour la review Apple
+## 9. Raisons de Rejet Courantes et Solutions Appliquées
 
-> **IMPORTANT** : Apple exige un compte de demonstration fonctionnel. Vous devez fournir des identifiants valides dans App Store Connect.
-
-| Champ | Valeur |
-|-------|--------|
-| Email | *(creer un compte demo sur votre backend)* |
-| Mot de passe | *(mot de passe du compte demo)* |
-
-### Comment creer le compte demo :
-1. Allez sur `https://apps.mytoolsgroup.eu`
-2. Creez un compte avec un email de type `review@mytools.app`
-3. Ajoutez quelques donnees de test :
-   - Au moins 1 devis (avec statuts varies : en attente, accepte)
-   - Au moins 1 facture
-   - Au moins 1 rendez-vous
-   - Quelques messages dans la messagerie
-4. Renseignez ces identifiants dans App Store Connect > App Review Information > Sign-In Information
-
-### Notes pour le reviewer (App Review Information > Notes)
-```
-MyTools est un portail client pour le reseau de garages MyJantes, specialise dans la renovation de jantes automobiles. L'application necessite un compte client existant. Un compte de demonstration est fourni ci-dessus.
-
-L'application utilise les permissions suivantes :
-- Camera : pour photographier les jantes lors d'une demande de devis (3 photos requises)
-- Photos : pour selectionner des photos existantes de jantes
-- Face ID : optionnel, pour connexion biometrique rapide
-- Notifications : pour alerter l'utilisateur des mises a jour de devis, factures et rendez-vous
-
-L'application ne collecte aucune donnee a des fins publicitaires. Aucun tracking utilisateur n'est effectue.
-```
+| Motif de rejet Apple | Règle | Solution dans l'app |
+|----------------------|-------|---------------------|
+| Pas de compte de démonstration | Guideline 2.1 | Compte `review@testapp.com` préconfigurée |
+| Pas de suppression de compte | Guideline 5.1.1(v) | Profil > Zone critique > Supprimer mon compte |
+| NSFaceIDUsageDescription manquant | Guideline 5.1.1 | ✅ Ajouté dans app.json le 02/04/2026 |
+| Pas de Sign in with Apple | Guideline 4.8 | `expo-apple-authentication` intégré sur iOS |
+| Description de permission vague | Guideline 5.1.1 | Descriptions détaillées et spécifiques en français |
+| Politique de confidentialité manquante | Guideline 5.1.1 | URL dans App Store Connect + écran in-app |
+| App crash au lancement | Guideline 2.1 | ErrorBoundary global + API avec fallback automatique |
+| Contenu uniquement web/WebView | Guideline 2.5.6 | Navigation native, caméra, biométrie, calendrier natif |
+| Références à d'autres plateformes | Guideline 2.3 | Aucune mention Android/Google Play dans l'UI |
+| Chiffrement non déclaré | Export compliance | `ITSAppUsesNonExemptEncryption: NO` configuré |
+| Permissions non justifiées | Guideline 5.1.1 | Toutes les permissions avec clé infoPlist et justification |
+| App ne fonctionne pas sans réseau | Guideline 2.1 | Messages d'erreur clairs, timeout 15s, aucun crash |
+| RGPD non conforme (EU) | Guideline 5.1.1 | Écran de consentement obligatoire au premier lancement |
 
 ---
 
-## Flux de l'application (parcours du reviewer)
-
-### Premier lancement
-1. **Ecran de consentement RGPD** s'affiche automatiquement
-   - 3 cases a cocher obligatoires (confidentialite, cookies, traitement des donnees)
-   - Liens vers les mentions legales et la politique de confidentialite
-   - Le bouton "Accepter et continuer" n'est actif que lorsque les 3 cases sont cochees
-2. Apres acceptation, redirection vers l'ecran de connexion
-
-### Connexion
-1. Saisir email et mot de passe du compte demo
-2. Appuyer sur "Se connecter"
-3. Redirection vers le tableau de bord (Accueil)
-
-### Ecrans principaux (onglets)
-1. **Accueil** : Tableau de bord avec statistiques rapides et liste des services
-2. **Devis** : Liste des devis avec filtres par statut
-3. **Factures** : Historique des factures avec telechargement PDF
-4. **RDV** : Calendrier et liste des rendez-vous
-5. **Messages** : Messagerie avec le garage
-6. **Profil** : Informations du compte, parametres, securite
-
-### Fonctionnalites a tester
-- **Demande de devis** : Accueil > Nouveau devis > Selectionner services > Prendre/choisir 3 photos > Envoyer
-- **Detail d'un devis** : Devis > Appuyer sur un devis > Voir details et statut
-- **Detail d'une facture** : Factures > Appuyer sur une facture > Telecharger PDF
-- **Messagerie** : Messages > Ouvrir une conversation > Envoyer un message
-- **Profil** : Profil > Voir informations > Tester les toggles notifications
-- **Suppression de compte** : Profil > Zone critique > Supprimer mon compte (ne pas confirmer la suppression)
-
----
-
-## Declarations de confidentialite (App Privacy)
-
-### Data Types collectes
-
-Dans App Store Connect > App Privacy, declarer les types de donnees suivants :
-
-#### 1. Coordonnees (Contact Info)
-| Type | Utilisation | Lie a l'identite | Suivi |
-|------|-------------|-------------------|-------|
-| Nom | Fonctionnalite de l'app | Oui | Non |
-| Adresse email | Fonctionnalite de l'app | Oui | Non |
-| Numero de telephone | Fonctionnalite de l'app | Oui | Non |
-| Adresse physique | Fonctionnalite de l'app | Oui | Non |
-
-#### 2. Contenu utilisateur (User Content)
-| Type | Utilisation | Lie a l'identite | Suivi |
-|------|-------------|-------------------|-------|
-| Photos | Fonctionnalite de l'app | Oui | Non |
-
-#### 3. Identifiants (Identifiers)
-| Type | Utilisation | Lie a l'identite | Suivi |
-|------|-------------|-------------------|-------|
-| User ID | Fonctionnalite de l'app | Oui | Non |
-
-#### 4. Donnees d'utilisation (Usage Data)
-| Type | Utilisation | Lie a l'identite | Suivi |
-|------|-------------|-------------------|-------|
-| Interaction avec le produit | Analyse | Non | Non |
-
-### Ce que l'app ne collecte PAS
-- Donnees de localisation
-- Donnees financieres ou de paiement
-- Donnees de sante ou de forme physique
-- Historique de navigation
-- Historique de recherche
-- Diagnostics
-- Donnees publicitaires
-
----
-
-## Permissions systeme (Usage Descriptions)
-
-Les descriptions suivantes sont configurees dans `app.json` et s'affichent automatiquement dans les alertes iOS :
-
-| Permission | Cle infoPlist | Description affichee |
-|------------|---------------|----------------------|
-| Camera | NSCameraUsageDescription | MyTools necessite l'acces a l'appareil photo pour vous permettre de prendre des photos de vos jantes lors de vos demandes de devis. |
-| Photos (lecture) | NSPhotoLibraryUsageDescription | MyTools necessite l'acces a votre bibliotheque de photos pour vous permettre de selectionner des photos de vos jantes pour vos demandes de devis. |
-| Photos (ecriture) | NSPhotoLibraryAddUsageDescription | MyTools souhaite enregistrer des photos dans votre bibliotheque. |
-| Face ID | NSFaceIDUsageDescription | MyTools utilise Face ID pour vous permettre de vous connecter de maniere securisee et rapide a votre compte. |
-| Notifications | Gere par expo-notifications | Alertes pour les mises a jour de devis, factures et rendez-vous. |
-| Tracking (ATT) | NSUserTrackingUsageDescription | MyTools n'effectue aucun suivi publicitaire. Votre vie privee est notre priorite. |
-| Microphone | NSMicrophoneUsageDescription | MyTools n'utilise pas le microphone. |
-| Localisation | NSLocationWhenInUseUsageDescription | MyTools n'utilise pas votre localisation. |
+## 10. Informations Techniques pour Apple
 
 ### Chiffrement
-| Cle | Valeur | Raison |
-|-----|--------|--------|
-| ITSAppUsesNonExemptEncryption | NO | L'application utilise uniquement HTTPS standard (TLS/SSL) pour les communications reseau, ce qui est exempt. |
+L'application utilise **uniquement HTTPS (TLS/SSL)** pour toutes les communications réseau. Ce chiffrement est standard et exempté de la réglementation sur l'export (EAR exemption). Réponse dans App Store Connect : **Non** (pas de chiffrement non-exempt).
+
+### Droits (Entitlements) iOS
+| Droit | Valeur | Raison |
+|-------|--------|--------|
+| `com.apple.developer.applesignin` | `Default` | Sign in with Apple |
+| Push Notifications | Activé | Alertes devis/factures/RDV |
+| Associated Domains | Non utilisé | — |
+
+### Connexion réseau
+- **API primaire** : `https://saas2.mytoolsgroup.eu/api` (réponse ~300ms)
+- **API de secours** : `https://saas3.mytoolsgroup.eu/api` (fallback automatique)
+- **Firebase Auth** : `https://identitytoolkit.googleapis.com` (Sign in with Google/Apple)
+- **Timeout** : 15 secondes par requête
+
+### Architecture
+- Framework : Expo SDK 54 / React Native 0.81
+- Routage : Expo Router (navigation native)
+- Auth : Firebase (Google/Apple) + JWT Bearer Token + Session cookie
+- Stockage local : expo-secure-store (tokens), AsyncStorage (préférences)
+- Backend proxy : Express.js sur Replit (port 5000 en prod)
 
 ---
 
-## Conformite RGPD
-
-L'application est conforme au RGPD (Reglement General sur la Protection des Donnees) :
-
-1. **Consentement explicite** : Ecran de consentement obligatoire au premier lancement avec 3 checkboxes distinctes
-2. **Droit d'acces** : L'utilisateur peut consulter toutes ses donnees dans l'onglet Profil
-3. **Droit a l'effacement (Article 17)** : Suppression de compte avec processus en 2 etapes :
-   - Etape 1 : Liste explicite de toutes les donnees qui seront supprimees
-   - Etape 2 : Confirmation par checkbox avec mention legale RGPD
-4. **Politique de confidentialite** : Accessible depuis le profil et l'ecran de consentement
-5. **Mentions legales** : Accessibles depuis le profil et l'ecran de consentement
-6. **Pas de tracking publicitaire** : Aucun SDK publicitaire, aucun suivi utilisateur
-5
----
-
-## Configuration technique
-
-### Build avec EAS (Expo Application Services)
-
-```bash
-# Installer EAS CLI
-npm install -g eas-cli
-
-# Se connecter
-eas login
-
-# Configurer le projet (si premier build)
-eas build:configure
-
-# Build iOS pour soumission
-eas build --platform ios --profile production
-
-# Soumettre a l'App Store
-eas submit --platform ios
-```
-
-### eas.json (configuration recommandee)
-
-```json
-{
-  "cli": {
-    "version": ">= 5.0.0"
-  },
-  "build": {
-    "development": {
-      "distribution": "internal",
-      "ios": {
-        "simulator": true
-      }
-    },
-    "preview": {
-      "distribution": "internal"
-    },
-    "production": {
-      "ios": {
-        "autoIncrement": true
-      },
-      "android": {
-        "autoIncrement": true
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "VOTRE_APPLE_ID",
-        "ascAppId": "VOTRE_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "VOTRE_TEAM_ID"
-      }
-    }
-  }
-}
-```
-
-### Variables d'environnement requises
-
-| Variable | Description | Ou la configurer |
-|----------|-------------|------------------|
-| EXTERNAL_API_URL | URL de l'API backend | Secret Replit / EAS Secrets |
-
----
-
-## Checklist avant soumission
-
-### App Store Connect
-- [ ] Compte Apple Developer actif (99 $/an)
-- [ ] App creee dans App Store Connect
-- [ ] Identifiants de demo renseignes dans "App Review Information"
-- [ ] Screenshots fournies (iPhone 6.7", iPhone 6.1", iPad si applicable)
-- [ ] Icone de l'app (1024x1024 PNG sans transparence)
-- [ ] Description, sous-titre et mots-cles renseignes
-- [ ] Categorie selectionnee (Economie et entreprise)
-- [ ] URL de politique de confidentialite renseignee
-- [ ] URL de support renseignee
-- [ ] Privacy labels (App Privacy) remplis comme decrit ci-dessus
-- [ ] Classification d'age selectionnee (4+)
-
-### Technique
-- [ ] Build de production cree avec `eas build --platform ios`
-- [ ] Build uploade avec `eas submit --platform ios`
-- [ ] L'API backend (`apps.mytoolsgroup.eu`) est accessible et fonctionnelle
-- [ ] Le compte de demo fonctionne correctement
-- [ ] Toutes les permissions ont des descriptions claires en francais
-- [ ] `ITSAppUsesNonExemptEncryption` est defini sur `NO`
-- [ ] Pas de crash au lancement
-- [ ] Le consentement RGPD s'affiche au premier lancement
-
-### Conformite Apple
-- [ ] L'app ne mentionne pas Android ou Google Play
-- [ ] L'app ne contient pas de contenu de test ou placeholder visible
-- [ ] Tous les liens (mentions legales, confidentialite) fonctionnent
-- [ ] L'ecran de suppression de compte est fonctionnel (requis par Apple depuis 2022)
-- [ ] L'app fonctionne en mode avion (affiche un message d'erreur clair, ne crash pas)
-- [ ] L'app supporte le mode sombre et le mode clair
-- [ ] L'app respecte les Safe Areas (encoche, Dynamic Island)
-
-### Screenshots requises
-
-Fournir des captures d'ecran pour les tailles suivantes :
-- **iPhone 6.7"** (iPhone 15 Pro Max / 16 Pro Max) : 1290 x 2796 px
-- **iPhone 6.1"** (iPhone 15 / 16) : 1179 x 2556 px
-- **iPad 12.9"** (si supporte) : 2048 x 2732 px
-
-Screenshots recommandees (dans l'ordre) :
-1. Ecran de connexion avec le logo
-2. Tableau de bord (Accueil) avec les statistiques
-3. Liste des devis
-4. Formulaire de demande de devis (avec photo)
-5. Onglet Profil (style iOS Settings)
-6. Ecran de consentement RGPD
-
----
-
-## Raisons courantes de rejet et comment les eviter
-
-| Motif de rejet | Solution implementee |
-|----------------|---------------------|
-| Pas de compte demo | Fournir des identifiants dans App Review Information |
-| Pas de suppression de compte | Ecran de suppression en 2 etapes dans Profil > Zone critique |
-| Descriptions de permissions vagues | Descriptions detaillees en francais expliquant pourquoi chaque permission est necessaire |
-| Pas de politique de confidentialite | Ecran accessible dans l'app + URL a renseigner dans App Store Connect |
-| Crash au lancement | ErrorBoundary global avec bouton de relance |
-| Contenu uniquement web | L'app offre une experience native complete avec navigation par onglets, camera, notifications |
-| Metadata incorrecte | Verifier que nom, description et screenshots sont coherents |
-
----
-
-## URLs importantes
+## 11. URLs de Référence
 
 | Ressource | URL |
 |-----------|-----|
-| API Backend | `https://apps.mytoolsgroup.eu/api` |
-| Espace client web | `https://apps.mytoolsgroup.eu` |
+| API principale | `https://saas2.mytoolsgroup.eu/api` |
+| API de secours | `https://saas3.mytoolsgroup.eu/api` |
+| App déployée (PWA) | `https://official-saa-s-3-my-tools-pwa-v-240326-prod-root98.replit.app` |
+| Politique de confidentialité | `https://www.mytoolsgroup.eu/privacy` |
 | Apple Developer | `https://developer.apple.com` |
 | App Store Connect | `https://appstoreconnect.apple.com` |
-| EAS Dashboard | `https://expo.dev` |
+| Expo Dashboard | `https://expo.dev` |
 
 ---
 
-## Support et contact
+## 12. Screenshots Requises
 
-Pour toute question technique liee a la soumission :
-- Verifier les logs EAS : `eas build:list`
-- Consulter le statut de review dans App Store Connect
-- En cas de rejet, lire attentivement le message d'Apple et ajuster en consequence
+### Tailles obligatoires
+| Appareil | Résolution | Requis |
+|----------|-----------|--------|
+| iPhone 6.7" (15 Pro Max / 16 Pro Max) | 1290 × 2796 px | ✅ Obligatoire |
+| iPhone 6.1" (15 / 16) | 1179 × 2556 px | ✅ Obligatoire |
+| iPad 12.9" (si supportsTablet: true) | 2048 × 2732 px | Recommandé |
 
----
-
-*Document genere le 06/03/2026 - MyTools v1.0.0*
+### Ordre recommandé des screenshots
+1. Écran de connexion avec logo MyTools
+2. Tableau de bord admin (stats : revenus, devis, clients)
+3. Liste des devis avec statuts colorés
+4. Formulaire de création de devis (avec photo de jante)
+5. Détail d'une facture avec bouton PDF
+6. Profil utilisateur / paramètres de sécurité (Face ID)
