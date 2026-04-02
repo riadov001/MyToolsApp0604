@@ -100,6 +100,8 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID = "crud-ae9d9"
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET = "crud-ae9d9.firebasestorage.app"
 
 [userenv.shared]
+EXTERNAL_API_PRIMARY = "https://saas2.mytoolsgroup.eu/api"
+EXTERNAL_API_FALLBACK = "https://saas3.mytoolsgroup.eu/api"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-744ef2e8-1b04-48ff-a81a-df6594af2930"

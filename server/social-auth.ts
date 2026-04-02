@@ -1,8 +1,8 @@
 import type { Express, Request, Response } from "express";
 
 const EXTERNAL_APIS = [
-  "https://saas2.mytoolsgroup.eu/api",
-  "https://saas3.mytoolsgroup.eu/api",
+  process.env.EXTERNAL_API_PRIMARY || "https://saas2.mytoolsgroup.eu/api",
+  process.env.EXTERNAL_API_FALLBACK || "https://saas3.mytoolsgroup.eu/api",
 ];
 const EXTERNAL_API = EXTERNAL_APIS[0];
 
