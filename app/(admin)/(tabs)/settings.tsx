@@ -10,6 +10,13 @@ import { useTheme } from "@/lib/theme";
 import { ThemeColors } from "@/constants/theme";
 import { useCustomAlert } from "@/components/CustomAlert";
 
+let SecureStore: any = null;
+let LocalAuthentication: any = null;
+if (Platform.OS !== "web") {
+  try { SecureStore = require("expo-secure-store"); } catch {}
+  try { LocalAuthentication = require("expo-local-authentication"); } catch {}
+}
+
 interface MenuItemProps {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
@@ -47,12 +54,56 @@ export default function AdminSettingsScreen() {
   const { showAlert, AlertComponent } = useCustomAlert();
 
   const [notifConsent, setNotifConsent] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState("Empreinte / Face ID");
 
   useEffect(() => {
     AsyncStorage.getItem("consent_notifications").then(v => {
       setNotifConsent(v === "true");
     }).catch(() => {});
+
+    checkBiometricSupport();
   }, []);
+
+  const checkBiometricSupport = async () => {
+    if (Platform.OS === "web" || !LocalAuthentication || !SecureStore) return;
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (compatible && enrolled) {
+        setBiometricSupported(true);
+        const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+        if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+          setBiometricLabel("Face ID");
+        } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+          setBiometricLabel("Empreinte digitale");
+        }
+        const saved = await SecureStore.getItemAsync("biometric_enabled");
+        setBiometricEnabled(saved === "true");
+      }
+    } catch {}
+  };
+
+  const toggleBiometric = async (val: boolean) => {
+    if (!SecureStore || !LocalAuthentication) return;
+    if (val) {
+      try {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: "Confirmez votre identité pour activer la connexion biométrique",
+          cancelLabel: "Annuler",
+          fallbackLabel: "Utiliser le code",
+        });
+        if (result.success) {
+          await SecureStore.setItemAsync("biometric_enabled", "true");
+          setBiometricEnabled(true);
+        }
+      } catch {}
+    } else {
+      await SecureStore.setItemAsync("biometric_enabled", "false");
+      setBiometricEnabled(false);
+    }
+  };
 
   const toggleNotifConsent = async (val: boolean) => {
     setNotifConsent(val);
@@ -121,6 +172,38 @@ export default function AdminSettingsScreen() {
         </View>
 
         <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Sécurité</Text>
+          {biometricSupported && (
+            <View style={styles.toggleRow}>
+              <View style={[styles.menuIconContainer, { backgroundColor: `${theme.primary}20` }]}>
+                <Ionicons name="finger-print-outline" size={20} color={theme.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuTitle}>{biometricLabel}</Text>
+                <Text style={styles.menuSubtitle}>Connexion rapide à l'ouverture</Text>
+              </View>
+              <Switch
+                value={biometricEnabled}
+                onValueChange={toggleBiometric}
+                trackColor={{ false: theme.border, true: theme.primary + "80" }}
+                thumbColor={biometricEnabled ? theme.primary : "#ccc"}
+              />
+            </View>
+          )}
+          {!biometricSupported && Platform.OS !== "web" && (
+            <View style={styles.toggleRow}>
+              <View style={[styles.menuIconContainer, { backgroundColor: "rgba(128,128,128,0.1)" }]}>
+                <Ionicons name="finger-print-outline" size={20} color={theme.textTertiary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.menuTitle, { color: theme.textSecondary }]}>Empreinte / Face ID</Text>
+                <Text style={styles.menuSubtitle}>Non disponible sur cet appareil</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Notifications</Text>
           <View style={styles.toggleRow}>
             <View style={[styles.menuIconContainer, { backgroundColor: `${theme.primary}20` }]}>
@@ -155,7 +238,7 @@ export default function AdminSettingsScreen() {
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Application</Text>
           <MenuItem {...itemProps} icon="book-outline" title="Guide de l'application" subtitle="Découvrir les fonctionnalités" onPress={() => router.push("/(admin)/guide" as Href)} iconColor="#F59E0B" />
-          <MenuItem {...itemProps} icon="information-circle-outline" title="Version" subtitle="1.0" onPress={() => {}} iconColor={theme.textSecondary} />
+          <MenuItem {...itemProps} icon="information-circle-outline" title="Version" subtitle="2.0.1" onPress={() => {}} iconColor={theme.textSecondary} />
         </View>
 
         <View style={styles.menuSection}>

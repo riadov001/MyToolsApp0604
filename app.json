@@ -80,7 +80,13 @@
           "photosPermission": "MyTools Admin accède à la galerie pour joindre des photos aux devis et demandes de service."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "MyTools utilise Face ID pour vous permettre de vous connecter de manière sécurisée et rapide à votre compte."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
