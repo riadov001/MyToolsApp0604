@@ -189,9 +189,9 @@ export default function QuoteCreateScreen() {
 
       const quoteBody: any = {
         clientId: payload.clientId,
-        serviceId: payload.serviceId,
         status: payload.status,
       };
+      if (payload.serviceId) quoteBody.serviceId = payload.serviceId;
       if (payload.notes?.trim()) quoteBody.notes = payload.notes.trim();
       if (payload.vehicleInfo) quoteBody.vehicleInfo = payload.vehicleInfo;
 

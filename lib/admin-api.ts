@@ -98,7 +98,8 @@ async function fetchWithRetry(url: string, options: any, useGlobal = false, retr
 }
 
 async function fetchWithNativeFallback(endpoint: string, options: any, useGlobal = false): Promise<Response> {
-  if (Platform.OS === "web" || NATIVE_BACKEND_URLS.length <= 1) {
+  const hasConfiguredProxy = !!(process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_DOMAIN);
+  if (Platform.OS === "web" || hasConfiguredProxy || NATIVE_BACKEND_URLS.length <= 1) {
     return fetchWithRetry(`${API_BASE}${endpoint}`, options, useGlobal);
   }
   let lastErr: any;

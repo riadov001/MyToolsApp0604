@@ -87,7 +87,7 @@ export default function GarageRegisterScreen() {
     setLoading(true);
     setSuggestions([]);
     try {
-      const param = mode === "siren" ? `siren=${encodeURIComponent(query)}` : `siret=${encodeURIComponent(query)}`;
+      const param = mode === "siren" ? `name=${encodeURIComponent(query)}` : `siret=${encodeURIComponent(query)}`;
       const res = await fetch(`${apiBase}/api/mobile/public/siret-lookup?${param}`, {
         headers: { Accept: "application/json" },
       });
@@ -141,8 +141,6 @@ export default function GarageRegisterScreen() {
     if (siretLookupTimer.current) clearTimeout(siretLookupTimer.current);
     if (digits.length === 14) {
       siretLookupTimer.current = setTimeout(() => doLookup(digits, "siret"), 400);
-    } else if (digits.length === 9) {
-      siretLookupTimer.current = setTimeout(() => doLookup(digits, "siren"), 400);
     }
   }, [doLookup]);
 
@@ -173,9 +171,10 @@ export default function GarageRegisterScreen() {
     }
     if (siretInput.trim()) {
       const digits = siretInput.trim();
-      if (digits.length === 9) await doLookup(digits, "siren");
-      else if (digits.length === 14) await doLookup(digits, "siret");
-      else showAlert({ type: "error", title: "Format invalide", message: "Saisissez un SIRET (14 chiffres) ou un SIREN (9 chiffres).", buttons: [{ text: "OK", style: "primary" }] });
+      if (digits.length === 9) {
+        showAlert({ type: "error", title: "SIREN incomplet", message: "Saisissez le SIRET complet (14 chiffres) ou recherchez par nom d'entreprise.", buttons: [{ text: "OK", style: "primary" }] });
+      } else if (digits.length === 14) await doLookup(digits, "siret");
+      else showAlert({ type: "error", title: "Format invalide", message: "Saisissez un SIRET valide (14 chiffres).", buttons: [{ text: "OK", style: "primary" }] });
     } else {
       await fetchSuggestions(nameInput.trim());
     }
