@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
-import * as admin from "firebase-admin";
+import { initializeApp, getApps, getApp, cert } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 
 const EXTERNAL_APIS = [
   process.env.EXTERNAL_API_PRIMARY || "https://saas2.mytoolsgroup.eu/api",
@@ -24,16 +25,14 @@ async function fetchExternalWithFallback(path: string, options: RequestInit): Pr
   throw lastErr;
 }
 
-let adminApp: any = null;
+let adminAuthInstance: any = null;
 
 function getAdminAuth() {
-  if (adminApp) return adminApp;
+  if (adminAuthInstance) return adminAuthInstance;
 
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!serviceAccountJson) {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_JSON non configuré sur le serveur"
-    );
+    throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON non configuré sur le serveur");
   }
 
   try {
@@ -43,14 +42,14 @@ function getAdminAuth() {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
     }
 
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    }
+    const existingApps = getApps();
+    const app = existingApps.length === 0
+      ? initializeApp({ credential: cert(serviceAccount) })
+      : getApp();
 
-    adminApp = admin.auth();
-    return adminApp;
+    adminAuthInstance = getAuth(app);
+    console.log("[SocialAuth] Firebase Admin initialisé avec succès");
+    return adminAuthInstance;
   } catch (err: any) {
     throw new Error(`Erreur init Firebase Admin: ${err.message}`);
   }

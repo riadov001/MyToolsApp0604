@@ -676,11 +676,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader("X-Session-Cookie", allCookies);
       }
 
+      const loginBody = await response.arrayBuffer();
+      const loginText = Buffer.from(loginBody).toString("utf-8");
+
+      if (!response.ok) {
+        let errMsg = `${response.status}`;
+        try {
+          const errData = JSON.parse(loginText);
+          errMsg = errData?.message || errData?.error || errMsg;
+          console.log(`[LOGIN] External API ${response.status} for ${req.body?.email}: ${errMsg}`);
+        } catch {}
+        res.status(response.status);
+        res.setHeader("content-type", "application/json");
+        return res.json({ message: errMsg || "Identifiants incorrects ou compte non vérifié." });
+      }
+
       res.status(response.status);
 
       if (response.ok) {
         let responseData: any;
-        const text = await response.text();
+        const text = loginText;
         try {
           responseData = JSON.parse(text);
         } catch (e) {
@@ -719,9 +734,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         return res.json(responseData);
       }
-
-      const body = await response.arrayBuffer();
-      res.send(Buffer.from(body));
     } catch (err: any) {
       console.error("Login proxy error:", err.message);
       res.status(502).json({ message: "Erreur de connexion au serveur API" });
