@@ -113,7 +113,7 @@ export default function OCRScannerModal({ visible, mode, onResult, onClose }: Pr
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
-      quality: 0.5,
+      quality: 0.2,
       base64: false,
     });
     if (!result.canceled && result.assets[0]) {

@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.mytoolsmobile.mytoolsgroup.eu",
-      "buildNumber": "15",
+      "buildNumber": "23",
       "config": {
         "usesNonExemptEncryption": false
       },
