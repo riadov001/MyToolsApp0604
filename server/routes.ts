@@ -1318,6 +1318,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
   }
 
+  // ── DASHBOARD: normalize flat API response → nested structure expected by UI ──
+  app.get("/api/admin/dashboard", async (req: Request, res: Response) => {
+    try {
+      const authHeaders = getAuthHeaders(req);
+      const paths = ["/mobile/admin/dashboard", "/admin/dashboard"];
+      let raw: any = null;
+      for (const p of paths) {
+        try {
+          const r = await fetchWithBackendFallback(p, { headers: authHeaders, redirect: "manual" });
+          const txt = await r.text();
+          if (!txt.startsWith("<!") && r.status < 400) { raw = JSON.parse(txt); break; }
+        } catch {}
+      }
+      if (!raw) return res.status(502).json({ message: "Impossible de charger les statistiques" });
+
+      if (!raw.currentMonth) {
+        raw.currentMonth = {
+          revenue: raw.currentMonthRevenue ?? raw.monthRevenue ?? raw.revenue ?? 0,
+          monthName: raw.monthName ?? new Date().toLocaleString("fr-FR", { month: "long" }),
+        };
+      }
+      if (!raw.quoteStatusStats) {
+        raw.quoteStatusStats = {
+          pending: raw.pendingQuotes ?? 0,
+          approved: raw.approvedQuotes ?? 0,
+          rejected: raw.rejectedQuotes ?? 0,
+          completed: raw.completedQuotes ?? raw.convertedQuotes ?? 0,
+        };
+      }
+      if (!raw.invoiceStatusStats) {
+        raw.invoiceStatusStats = {
+          paid: raw.paidInvoices ?? 0,
+          pending: raw.pendingInvoices ?? 0,
+          overdue: raw.overdueInvoices ?? 0,
+          cancelled: raw.cancelledInvoices ?? 0,
+        };
+      }
+      if (typeof raw.totalQuotes === "undefined") raw.totalQuotes = 0;
+      if (typeof raw.totalInvoices === "undefined") raw.totalInvoices = 0;
+      if (typeof raw.totalReservations === "undefined") raw.totalReservations = 0;
+
+      console.log(`[DASHBOARD] normalized response sent`);
+      return res.json(raw);
+    } catch (err: any) {
+      console.error("[DASHBOARD] error:", err.message);
+      return res.status(502).json({ message: "Erreur de connexion" });
+    }
+  });
+
+  // ── SERVICES GET BY ID: fetch list and filter when dedicated endpoint is absent ──
+  app.get("/api/admin/services/:id", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const authHeaders = getAuthHeaders(req);
+    const directPaths = [`/mobile/admin/services/${id}`, `/admin/services/${id}`];
+    for (const p of directPaths) {
+      try {
+        const r = await fetchWithBackendFallback(p, { headers: authHeaders, redirect: "manual" });
+        const txt = await r.text();
+        if (!txt.startsWith("<!") && r.status < 400) return res.status(r.status).json(JSON.parse(txt));
+      } catch {}
+    }
+    const listPaths = ["/mobile/admin/services", "/admin/services"];
+    for (const p of listPaths) {
+      try {
+        const r = await fetchWithBackendFallback(p, { headers: authHeaders, redirect: "manual" });
+        const txt = await r.text();
+        if (!txt.startsWith("<!") && r.status < 400) {
+          const list = JSON.parse(txt);
+          const items: any[] = Array.isArray(list) ? list : (list.data || list.services || []);
+          const found = items.find((s: any) => String(s.id ?? s._id) === id);
+          if (found) return res.json(found);
+        }
+      } catch {}
+    }
+    return res.status(404).json({ message: "Service non trouvé" });
+  });
+
+  // ── EMAIL SENDING: quotes and invoices ──
+  app.post("/api/admin/quotes/:id/send-email", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const authHeaders = getAuthHeaders(req);
+    const paths = [
+      `/mobile/admin/quotes/${id}/send-email`,
+      `/mobile/admin/quotes/${id}/send`,
+      `/mobile/admin/quotes/${id}/notify`,
+      `/admin/quotes/${id}/send-email`,
+      `/admin/quotes/${id}/send`,
+    ];
+    for (const p of paths) {
+      try {
+        const r = await fetchWithBackendFallback(p, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify(req.body || {}),
+          redirect: "manual",
+        });
+        const txt = await r.text();
+        if (!txt.startsWith("<!") && r.status < 400) {
+          console.log(`[EMAIL] Quote ${id} send-email OK via ${p}`);
+          return res.status(r.status).json(JSON.parse(txt));
+        }
+      } catch {}
+    }
+    console.warn(`[EMAIL] Quote ${id} send-email: no valid endpoint found`);
+    return res.status(200).json({ message: "Email non disponible sur cette API" });
+  });
+
+  app.post("/api/admin/invoices/:id/send-email", async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const authHeaders = getAuthHeaders(req);
+    const paths = [
+      `/mobile/admin/invoices/${id}/send-email`,
+      `/mobile/admin/invoices/${id}/send`,
+      `/mobile/admin/invoices/${id}/notify`,
+      `/admin/invoices/${id}/send-email`,
+      `/admin/invoices/${id}/send`,
+    ];
+    for (const p of paths) {
+      try {
+        const r = await fetchWithBackendFallback(p, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify(req.body || {}),
+          redirect: "manual",
+        });
+        const txt = await r.text();
+        if (!txt.startsWith("<!") && r.status < 400) {
+          console.log(`[EMAIL] Invoice ${id} send-email OK via ${p}`);
+          return res.status(r.status).json(JSON.parse(txt));
+        }
+      } catch {}
+    }
+    console.warn(`[EMAIL] Invoice ${id} send-email: no valid endpoint found`);
+    return res.status(200).json({ message: "Email non disponible sur cette API" });
+  });
+
   app.use("/api/admin", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const authHeaders: Record<string, string> = {

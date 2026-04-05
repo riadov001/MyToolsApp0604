@@ -67,6 +67,7 @@ export default function InvoiceDetailScreen() {
   const { showAlert, AlertComponent } = useCustomAlert();
   const [pdfLoading, setPdfLoading] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const { data: inv, isLoading, error } = useQuery({
     queryKey: ["admin-invoice", id],
@@ -381,6 +382,38 @@ export default function InvoiceDetailScreen() {
               : <Ionicons name="download-outline" size={18} color="#22C55E" />
             }
             <Text style={[styles.actionBtnText, { color: "#22C55E" }]}>Télécharger le PDF</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.actionBtn, { borderColor: "#8B5CF650", marginTop: 4, opacity: sendingEmail ? 0.6 : 1 }]}
+            disabled={sendingEmail}
+            onPress={async () => {
+              setSendingEmail(true);
+              try {
+                await adminInvoices.sendEmail(id);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                showAlert({
+                  type: "success",
+                  title: "Email envoyé",
+                  message: "La facture a été envoyée par email au client.",
+                  buttons: [{ text: "OK", style: "primary" }],
+                });
+              } catch (err: any) {
+                showAlert({
+                  type: "error",
+                  title: "Erreur",
+                  message: err?.message || "Impossible d'envoyer l'email.",
+                  buttons: [{ text: "OK", style: "primary" }],
+                });
+              } finally {
+                setSendingEmail(false);
+              }
+            }}
+          >
+            {sendingEmail
+              ? <ActivityIndicator size="small" color="#8B5CF6" />
+              : <Ionicons name="mail-outline" size={18} color="#8B5CF6" />
+            }
+            <Text style={[styles.actionBtnText, { color: "#8B5CF6" }]}>Envoyer par email</Text>
           </Pressable>
         </View>
 

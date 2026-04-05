@@ -56,6 +56,7 @@ export default function QuoteDetailScreen() {
   const queryClient = useQueryClient();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const { data: q, isLoading, error } = useQuery({
     queryKey: ["admin-quote", id],
@@ -465,6 +466,38 @@ export default function QuoteDetailScreen() {
                 : <Ionicons name="share-outline" size={18} color={theme.primary} />
               }
               <Text style={styles.actionBtnSecondaryText}>Partager le PDF</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.actionBtnSecondary, { marginTop: 4, borderColor: "#8B5CF650", opacity: sendingEmail ? 0.6 : 1 }]}
+              disabled={sendingEmail}
+              onPress={async () => {
+                setSendingEmail(true);
+                try {
+                  await adminQuotes.sendEmail(id);
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  showAlert({
+                    type: "success",
+                    title: "Email envoyé",
+                    message: "Le devis a été envoyé par email au client.",
+                    buttons: [{ text: "OK", style: "primary" }],
+                  });
+                } catch (err: any) {
+                  showAlert({
+                    type: "error",
+                    title: "Erreur",
+                    message: err?.message || "Impossible d'envoyer l'email.",
+                    buttons: [{ text: "OK", style: "primary" }],
+                  });
+                } finally {
+                  setSendingEmail(false);
+                }
+              }}
+            >
+              {sendingEmail
+                ? <ActivityIndicator size="small" color="#8B5CF6" />
+                : <Ionicons name="mail-outline" size={18} color="#8B5CF6" />
+              }
+              <Text style={[styles.actionBtnSecondaryText, { color: "#8B5CF6" }]}>Envoyer par email</Text>
             </Pressable>
           </View>
         ) : null}
