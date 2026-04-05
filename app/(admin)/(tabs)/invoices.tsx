@@ -15,6 +15,7 @@ import { ThemeColors } from "@/constants/theme";
 import { useCustomAlert } from "@/components/CustomAlert";
 import { StatusDropdown } from "@/components/StatusDropdown";
 import { FloatingSupport } from "@/components/FloatingSupport";
+import OCRScannerModal, { OCRResult } from "@/components/OCRScannerModal";
 
 function resolveClient(item: any, clientMap: Record<string, any>): { name: string; email: string; phone: string } {
   const c = item.client || (item.clientId && clientMap[String(item.clientId)]) || null;
@@ -43,6 +44,7 @@ export default function AdminInvoicesScreen() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
+  const [ocrVisible, setOcrVisible] = useState(false);
 
   const params = useLocalSearchParams();
   const lastAppliedFilter = useRef<string | null>(null);
@@ -80,6 +82,23 @@ export default function AdminInvoicesScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     },
   });
+
+  const markPaidMutation = useMutation({
+    mutationFn: (id: string) => adminInvoices.updateStatus(id, "paid"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-analytics"] });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    onError: () => {
+      showAlert({ type: "error", title: "Erreur", message: "Impossible de marquer comme payée.", buttons: [{ text: "OK" }] });
+    },
+  });
+
+  const handleOCRResult = (result: OCRResult) => {
+    setOcrVisible(false);
+    router.push({ pathname: "/(admin)/invoice-create", params: { ocrData: JSON.stringify(result) } } as any);
+  };
 
   const confirmDelete = (id: string, label: string) => {
     showAlert({

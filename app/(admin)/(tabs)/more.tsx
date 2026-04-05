@@ -11,7 +11,6 @@ import { useTheme } from "@/lib/theme";
 import { ThemeColors } from "@/constants/theme";
 import { getGaragePlan, adminAnalytics } from "@/lib/admin-api";
 import { useAuth } from "@/lib/auth-context";
-import OCRScannerModal from "@/components/OCRScannerModal";
 
 const ROOT_ROLES = ["root", "root_admin"];
 const SUPER_ROLES = ["super_admin", "superadmin"];
@@ -27,8 +26,6 @@ export default function MoreScreen() {
   const topPad = Platform.OS === "web" ? 67 + 16 : insets.top + 16;
   const bottomPad = Platform.OS === "web" ? 34 + 24 : insets.bottom + 90;
 
-  const [ocrVisible, setOcrVisible] = useState(false);
-  const [ocrMode, setOcrMode] = useState<"quote" | "invoice">("quote");
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<any>(null);
   const [aiType, setAiType] = useState<string>("");
@@ -53,21 +50,6 @@ export default function MoreScreen() {
       setAiResult({ error: err?.message || "Erreur lors de l'analyse" });
     } finally {
       setAiLoading(null);
-    }
-  };
-
-  const handleOCR = (mode: "quote" | "invoice") => {
-    setOcrMode(mode);
-    setOcrVisible(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  const handleOCRResult = (result: any) => {
-    setOcrVisible(false);
-    if (ocrMode === "quote") {
-      router.push({ pathname: "/(admin)/quote-create", params: { ocrData: JSON.stringify(result) } } as any);
-    } else {
-      router.push({ pathname: "/(admin)/invoice-create", params: { ocrData: JSON.stringify(result) } } as any);
     }
   };
 
@@ -98,24 +80,6 @@ export default function MoreScreen() {
       color: "#F59E0B",
       visible: true,
       onPress: () => router.push("/(admin)/services-list" as any),
-    },
-    {
-      id: "ocr_quote",
-      icon: "scan-outline" as const,
-      label: "Scanner un devis",
-      sub: "OCR intelligent avec IA",
-      color: "#8B5CF6",
-      visible: true,
-      onPress: () => handleOCR("quote"),
-    },
-    {
-      id: "ocr_invoice",
-      icon: "document-attach-outline" as const,
-      label: "Scanner une facture",
-      sub: "OCR intelligent avec IA",
-      color: "#3B82F6",
-      visible: true,
-      onPress: () => handleOCR("invoice"),
     },
     {
       id: "admin_logs",
@@ -240,12 +204,6 @@ export default function MoreScreen() {
         ) : null}
       </ScrollView>
 
-      <OCRScannerModal
-        visible={ocrVisible}
-        onClose={() => setOcrVisible(false)}
-        onResult={handleOCRResult}
-        mode={ocrMode}
-      />
     </View>
   );
 }
