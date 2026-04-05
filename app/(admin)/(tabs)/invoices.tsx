@@ -175,7 +175,17 @@ export default function AdminInvoicesScreen() {
             <View style={styles.cardActions}>
               <Pressable
                 style={[styles.actionBtn, { backgroundColor: "#22C55E20" }]}
-                onPress={() => {}}
+                onPress={() => {
+                  showAlert({
+                    type: "warning",
+                    title: "Marquer comme payée ?",
+                    message: "Cette facture sera marquée comme payée.",
+                    buttons: [
+                      { text: "Annuler" },
+                      { text: "Confirmer", style: "primary", onPress: () => markPaidMutation.mutate(String(item.id)) },
+                    ],
+                  });
+                }}
                 accessibilityLabel="Marquer payée"
               >
                 <Ionicons name="checkmark" size={16} color="#22C55E" />
@@ -185,7 +195,7 @@ export default function AdminInvoicesScreen() {
         </View>
       </Pressable>
     );
-  }, [theme, isAdmin, clientMap]);
+  }, [theme, isAdmin, clientMap, markPaidMutation, showAlert]);
 
   return (
     <View style={styles.container}>
@@ -196,7 +206,13 @@ export default function AdminInvoicesScreen() {
           contentFit="contain"
         />
         <Text style={styles.screenTitle}>Factures</Text>
-        <View style={{ width: 44 }} />
+        <Pressable
+          style={({ pressed }) => [styles.ocrBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOcrVisible(true); }}
+          accessibilityLabel="Scanner une facture"
+        >
+          <Ionicons name="scan-outline" size={22} color={theme.primary} />
+        </Pressable>
       </View>
 
       <View style={styles.searchRow}>
@@ -246,6 +262,12 @@ export default function AdminInvoicesScreen() {
       )}
       {AlertComponent}
       <FloatingSupport />
+      <OCRScannerModal
+        visible={ocrVisible}
+        mode="invoice"
+        onResult={handleOCRResult}
+        onClose={() => setOcrVisible(false)}
+      />
     </View>
   );
 }
@@ -253,6 +275,7 @@ export default function AdminInvoicesScreen() {
 const getStyles = (theme: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background },
   header: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingBottom: 12 },
+  ocrBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: theme.primary + "15", justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: theme.primary + "30" },
   headerLogo: { width: 34, height: 34, borderRadius: 8 },
   screenTitle: { flex: 1, fontSize: 22, fontFamily: "Michroma_400Regular", color: theme.text, letterSpacing: 0.5 },
   fab: {
