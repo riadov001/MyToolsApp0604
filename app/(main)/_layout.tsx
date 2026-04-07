@@ -1,5 +1,11 @@
 import { Stack } from "expo-router";
 import React from "react";
+import { vexo } from 'vexo-analytics';
+
+// Initialize Vexo at the root level, outside of any component
+if (__DEV__ === false) {
+  vexo('b9e49521-9e1e-4f84-887e-75cc01c5d173');
+}
 
 export default function MainLayout() {
   return (
